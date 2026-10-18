@@ -1,0 +1,10 @@
+node_modules/
+*.log
+.DS_Store
+
+# Комплекты для скачивания — сотни мегабайт, git их не переварит: файлы кладутся
+# в `downloads/` перед запуском сайта, сервер раздаёт их по адресу `/downloads/`.
+downloads/
+
+# Токен GitHub для fetch-release.mjs — личный, в репозиторий не попадает.
+.github-token

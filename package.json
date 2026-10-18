@@ -1,0 +1,28 @@
+{
+    "name": "chui-ide-site",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Сайт приложения chui_iDE: лендинг и руководство на Express",
+    "type": "module",
+    "engines": {
+        "node": ">=20"
+    },
+    "scripts": {
+        "start": "node server.mjs",
+        "dev": "node --watch server.mjs",
+        "sync": "node scripts/sync-readme.mjs",
+        "check": "npm run format:check && node scripts/check.mjs",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "fetch": "node fetch-release.mjs"
+    },
+    "dependencies": {
+        "compression": "^1.8.2",
+        "express": "^5.3.0",
+        "markdown-it": "^14.1.0",
+        "markdown-it-task-lists": "^2.1.1"
+    },
+    "devDependencies": {
+        "prettier": "^3.9.9"
+    }
+}
