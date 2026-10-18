@@ -6,5 +6,9 @@ node_modules/
 # в `downloads/` перед запуском сайта, сервер раздаёт их по адресу `/downloads/`.
 downloads/
 
-# Токен GitHub для fetch-release.mjs — личный, в репозиторий не попадает.
+# Сведения о последнем релизе — кэш lib/release.mjs: обновляется сам при запуске,
+# у каждого свои данные (когда спрашивали GitHub), в git ему нечего делать.
+content/release.json
+
+# Токен GitHub — личный, в репозиторий не попадает.
 .github-token

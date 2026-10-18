@@ -13,8 +13,7 @@
         "sync": "node scripts/sync-readme.mjs",
         "check": "npm run format:check && node scripts/check.mjs",
         "format": "prettier --write .",
-        "format:check": "prettier --check .",
-        "fetch": "node fetch-release.mjs"
+        "format:check": "prettier --check ."
     },
     "dependencies": {
         "compression": "^1.8.2",

@@ -20,6 +20,7 @@ import {
     pages,
     searchIndexScript,
     siteRoutes,
+    version,
     warnings,
 } from "../lib/site.mjs";
 
@@ -98,9 +99,19 @@ if (pages.length !== new Set(pages.map((page) => page.slug)).size) {
    что файл на месте. Ссылка в пустоту на главной заметнее всего, её ловим здесь. */
 for (const card of downloadCards) {
     for (const item of card.files) {
+        if (!item.url && !item.path) {
+            failures.push(`${card.os}: у файла «${item.format}» нет ни url, ни path — кнопка ведёт в пустоту`);
+            continue;
+        }
         if (!item.external) continue;
         if (!/^https:\/\/\S+\/\S+\.[a-z0-9]+$/i.test(item.url)) {
             failures.push(`${card.os}: ссылка «${item.url}» — не похожа на адрес файла (нужен https и расширение)`);
+            continue;
+        }
+        /* Ссылка на релиз должна вести на ту же версию, что названа на сайте:
+           иначе в шапке «Версия 0.3.46», а кнопка качает файл 0.3.45. */
+        if (item.url.includes("/releases/download/") && !item.url.includes(`/download/v${version}/`)) {
+            failures.push(`${card.os}: ссылка «${item.url}» — не релиз v${version}, хотя на сайте эта версия`);
         }
     }
 }
