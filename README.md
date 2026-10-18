@@ -18,6 +18,10 @@ npm run dev        # то же, но с перезапуском на правк
 npm run check      # форматирование и проверка ссылок
 ```
 
+При первом запуске сервер спрашивает GitHub о последнем релизе и создаёт кэш
+`content/release.json`. Без сети (или при недоступном `api.github.com`) карточки на
+главной покажут «скоро», а в консоли будет причина — см. «Скачивание».
+
 | Переменная     | Что задаёт                                                                   |
 | -------------- | ---------------------------------------------------------------------------- |
 | `PORT`         | порт (по умолчанию `9091`)                                                   |
@@ -58,7 +62,7 @@ npm run check      # форматирование и проверка ссыло
 | `content/site.mjs`          | системы для скачивания, порядок и адреса разделов руководства                   |
 | `content/landing.mjs`       | тексты главной: обзор, карточки возможностей, требования, ограничения           |
 | `content/guide/readme.md`   | копия README приложения; обновляется `npm run sync`, руками не правится         |
-| `content/guide/readme.json` | версия и хеш копии README; из версии — номер на главной                         |
+| `content/guide/readme.json` | версия и хеш копии README; номер — в подвале и на страницах руководства         |
 | `src/style.css`             | оформление: палитра приложения как есть, схема одна — тёмная                    |
 | `src/site.js`               | меню, поиск по руководству, оглавление, прогресс чтения, копирование примеров   |
 | `src/icon.png`              | значок приложения                                                               |
@@ -122,9 +126,9 @@ npm run check      # форматирование и проверка ссыло
 Переснять — из папки приложения (там есть `electron` и собранный `dist/`):
 
 ```bash
-cd ../GITHUB/chui_ide
-npx electron --no-sandbox ../GITVERSE/chui_ide_site/scripts/_shot.cjs editor.png wide
-npx electron --no-sandbox ../GITVERSE/chui_ide_site/scripts/_shot.cjs assistant.png panel
+cd ../chui_ide
+npx electron --no-sandbox ../chui_ide_site/scripts/_shot.cjs editor.png wide
+npx electron --no-sandbox ../chui_ide_site/scripts/_shot.cjs assistant.png panel
 ```
 
 Первый кадр — без правой панели (редактор во всю ширину), второй — как окно открывается
@@ -158,11 +162,17 @@ README приложения режется по заголовкам второ�
 - id на странице не повторяются;
 - у каждого раздела руководства есть страница, адреса (`slugs`) не совпадают;
 - каждая страница попала в поисковый индекс;
-- у внешних ссылок на сборки — https и расширение файла, дубли ссылок ловятся.
+- у каждого файла сборки есть `url` или `path`, ссылка на релиз ведёт на ту же версию,
+  что названа на сайте, а у внешней — https и расширение файла; дубли ссылок ловятся.
 
-Отсутствующий файл сборки — предупреждение (`!`), а не ошибка: на сайте такая строка
-показана как «скоро». Ненулевой код возврата означает, что на сайте будет битая ссылка,
-и публиковать такое не стоит.
+Сеть `npm run check` не трогает: данные о релизе он берёт из кэша (или из того, что
+удалось спросить при импорте). Поэтому ссылка на удалённый тег проверкой не ловится —
+только разворотом сайта после обновления релиза.
+
+Отсутствующий локальный файл сборки — предупреждение (`!`), а не ошибка: на сайте такая
+строка показана как «скоро». Ненулевой код возврата означает, что на сайте будет битая
+ссылка, и публиковать такое не стоит. Просроченный кэш релиза и расхождение версии
+релиза с `readme.json` — тоже предупреждения, а не ошибки.
 
 ## Кэш и заголовки
 
@@ -175,12 +185,156 @@ README приложения режется по заголовкам второ�
 
 ## Публикация
 
-Сайту нужен Node.js 20 или новее — статикой он больше не публикуется. Запуск —
-`node server.mjs` (или `npm start`) за обратным прокси; порт берётся из `PORT`.
+Сайту нужен **Node.js 20** или новее — статикой он больше не публикуется: страницы
+собираются при запуске. Схема — Node-процесс на `127.0.0.1:9091` за nginx, HTTPS —
+через Let's Encrypt. Ниже пример для Ubuntu 22.04/24.04 и домена `chuichat.ru`;
+пути замените на свои.
 
-Рядом с кодом на сервере должны лежать:
+### 1. DNS
 
-- `content/guide/readme.md`, обновлённый `npm run sync` (иначе руководство отстанет);
-- `downloads/` с файлами сборок — в git их нет, поэтому на сервер они попадают отдельно,
-  например `rsync -av downloads/ server:/путь/chui_ide_site/downloads/`. Без них карточки
-  покажут «скоро», хотя локально кнопки есть.
+У регистратора домена — A-записи на IP сервера:
+
+| Тип | Имя   | Значение |
+| --- | ----- | -------- |
+| A   | `@`   | IP VPS   |
+| A   | `www` | IP VPS   |
+
+`dig +short chuichat.ru` должен вернуть этот адрес до выдачи сертификата: certbot
+проверяет домен по DNS и по HTTP.
+
+### 2. Что поставить
+
+```bash
+sudo apt update && sudo apt install -y nginx git curl
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v                       # нужно 20 или новее: в коде fetch и top-level await
+sudo ufw allow OpenSSH && sudo ufw allow 'Nginx Full'
+```
+
+### 3. Код и зависимости
+
+```bash
+sudo mkdir -p /var/www && cd /var/www
+sudo git clone https://github.com/Saintdizen/chui_ide_site.git
+cd chui_ide_site
+sudo npm ci --omit=dev        # prettier нужен только для npm run check на своей машине
+```
+
+Отдельно качать ничего не нужно: сборки лежат на GitHub Releases, а `content/guide/`
+и кэш релиза обновляются сами при старте. Папка `downloads/` нужна, только если
+какой-то файл раздаётся с сайта (`path` вместо `url` в `content/site.mjs`) — в git она
+не попадает.
+
+Проверка до systemd:
+
+```bash
+PORT=9091 HOST=127.0.0.1 node server.mjs
+curl -s localhost:9091/healthz   # {"ok":true,"version":"…","pages":…}
+```
+
+Если в логе `! последнего релиза нет …` — сервер не достучался до `api.github.com`:
+проверьте исходящую сеть. Строка `! последний релиз — v…, а README скопирован от …`
+значит, что копию README пора обновить командой `npm run sync`.
+
+### 4. systemd
+
+`/etc/systemd/system/chui-site.service`:
+
+```ini
+[Unit]
+Description=chui_iDE site
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/chui_ide_site
+ExecStart=/usr/bin/node server.mjs
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=9091
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`HOST=127.0.0.1` обязателен: по умолчанию сервер слушает `0.0.0.0`, и порт был бы
+открыт наружу мимо nginx. Писать процессу нужно только кэш релиза:
+
+```bash
+sudo chown -R www-data:www-data /var/www/chui_ide_site/content
+sudo systemctl daemon-reload && sudo systemctl enable --now chui-site
+sudo systemctl status chui-site --no-pager
+```
+
+### 5. nginx
+
+`/etc/nginx/sites-available/chuichat.ru`:
+
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name chuichat.ru www.chuichat.ru;
+
+    location / {
+        proxy_pass http://127.0.0.1:9091;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_request_buffering off;   # не съедать Range при докачке из /downloads
+        gzip off;                       # сжатие делает compression в самом Node
+    }
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/chuichat.ru /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### 6. HTTPS
+
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d chuichat.ru -d www.chuichat.ru
+```
+
+Certbot сам добавит `listen 443 ssl`, сертификат и редирект с http; продление —
+таймер `certbot.timer` (`sudo certbot renew --dry-run` для проверки). Один адрес
+канонический выбираете вы: без `return 301` на `chuichat.ru` оба имени отдают один
+и тот же сайт.
+
+### 7. Обновление сайта
+
+```bash
+cd /var/www/chui_ide_site
+sudo git pull
+sudo npm ci --omit=dev
+sudo systemctl restart chui-site
+```
+
+Перезапуск обязателен для `content/*.mjs`, `lib/*` и `server.mjs`; `src/style.css`
+и `src/site.js` подхватываются без него — ссылки на них несут `?v=<время правки>`.
+После смены релиза ничего делать не нужно: новый тег возьмётся при старте, когда кэшу
+исполнится 15 минут (`RELEASE_TTL`). Заставить немедленно — `sudo rm content/release.json`
+и `sudo systemctl restart chui-site`.
+
+### 8. Приёмка
+
+```bash
+curl -s  https://chuichat.ru/healthz
+curl -sI https://chuichat.ru/ | head -1
+curl -sI https://chuichat.ru/guide/editor.html | grep -i location  # 301 → /guide/editor
+curl -s  https://chuichat.ru/ | grep -c 'releases/download/'       # число ссылок на сборки
+```
+
+Ожидаемо: `{"ok":true,…}`, `200`, редирект со старого адреса и столько же ссылок,
+сколько файлов в последнем релизе.
