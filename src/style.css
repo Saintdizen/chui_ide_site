@@ -656,7 +656,7 @@ pre {
 /* ── главная: разделы ────────────────────────────────────────────────────── */
 
 .section {
-    padding: 84px 24px;
+    padding: 40px 24px;
 }
 
 .section_alt {
@@ -673,7 +673,7 @@ pre {
    появляется общий левый край, и страница читается сверху вниз, а не по центру. */
 .section_head {
     max-width: var(--container);
-    margin: 0 auto 40px;
+    margin: 0 auto 32px;
 }
 
 .section_eyebrow {
@@ -716,8 +716,7 @@ pre {
 .section > .steps,
 .section > .two_cols,
 .section > .shortcuts,
-.section > .section_more,
-.section > .download_note {
+.section > .section_more {
     max-width: var(--container);
     margin-left: auto;
     margin-right: auto;
@@ -1194,13 +1193,6 @@ kbd {
     line-height: 1.5;
 }
 
-.download_note {
-    margin-top: 20px;
-    color: var(--text_3);
-    font-size: 13.5px;
-    text-align: center;
-}
-
 /* ── требования и ограничения ────────────────────────────────────────────── */
 
 .two_cols {
@@ -1286,15 +1278,32 @@ kbd {
 /* ── подвал ──────────────────────────────────────────────────────────────── */
 
 .footer {
-    display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-    gap: 40px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    /* Колонки разъезжаются по краям: левая держится границы контента, правая — тоже,
+       вместо пустоты справа от ссылок, которая оставалась от сетки 1.6fr / 1fr. */
+    justify-content: space-between;
+    gap: 24px 48px;
     /* Ширина та же, что у разделов: отступы входят в неё, поэтому текст подвала
        стоит на одной вертикали с карточками, а не на 24 px правее. */
     max-width: calc(var(--container) + 48px);
     margin: 0 auto;
-    padding: 56px 24px 64px;
+    padding: 40px 24px 48px;
     border-top: 1px solid var(--border);
+}
+
+/* Ссылки — по правому краю контейнера: рваный правый край строк и был тем
+   перекосом, из-за которого подвал не сходился с блоками выше. */
+.footer_col:last-child {
+    margin-left: auto;
+    text-align: right;
+}
+
+/* Руководство: подвал в границах сетки статьи — левый край колонки совпадает
+   с боковым меню, правый — с концом текста. */
+.footer_shell {
+    max-width: var(--shell_max);
 }
 
 .brand_footer {
@@ -1326,6 +1335,10 @@ kbd {
 
 .footer li {
     margin-bottom: 8px;
+}
+
+.footer li:last-child {
+    margin-bottom: 0;
 }
 
 .footer li a {
@@ -2049,6 +2062,21 @@ pre.code:focus-visible {
 
     .hero h1 {
         font-size: clamp(36px, 12vw, 48px);
+    }
+
+    .section {
+        padding: 28px 16px;
+    }
+
+    /* На узком экране колонки встают друг под другом — выравнивание по правому
+       краю тут только мешает читать. */
+    .footer_col:last-child {
+        margin-left: 0;
+        text-align: left;
+    }
+
+    .section_head {
+        margin-bottom: 24px;
     }
 
     .hero_icon {
