@@ -12,3 +12,6 @@ content/release.json
 
 # Токен GitHub — личный, в репозиторий не попадает.
 .github-token
+
+# Служебное состояние chui_iDE: раскладка панелей, у каждого своя.
+.chui_ide/
