@@ -136,8 +136,8 @@ app.whenReady().then(async () => {
     const win = openIdeWindow();
     await wait(4000);
 
-    for (const name of ["src", "tests"]) step(`раскрываю ${name}: ${await clickRow(win, name, "click")}`);
-    for (const name of ["server.js", "order.js", "report.py"]) {
+    for (const name of ["src", "tests", "data"]) step(`раскрываю ${name}: ${await clickRow(win, name, "dblclick")}`);
+    for (const name of ["order.js", "server.js", "report.py"]) {
         step(`открываю ${name}: ${await clickRow(win, name, "dblclick")}`);
     }
     step(`вкладка: ${await activateTab(win, "order.js")}`);

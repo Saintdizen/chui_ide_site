@@ -288,3 +288,74 @@
     );
     onScroll();
 })();
+
+/* Снимки в модальном окне: картинка в галерее открывается поверх страницы,
+   без ухода на голый PNG. В окне только увеличенный снимок — без подписей
+   и ссылок. Окно — нативный <dialog>, поэтому Esc, ловушка фокуса
+   и возврат фокуса на снимок работают сами. */
+(function () {
+    var modal = document.querySelector("[data-shot-modal]");
+    if (!modal) return;
+
+    var img = modal.querySelector("[data-shot-modal-img]");
+    var opener = null;
+
+    function open(link) {
+        var src = link.getAttribute("href");
+        var preview = link.querySelector("img");
+
+        opener = link;
+        img.src = src;
+        img.alt = (preview && preview.getAttribute("alt")) || "";
+        if (preview && preview.getAttribute("width")) {
+            img.setAttribute("width", preview.getAttribute("width"));
+            img.setAttribute("height", preview.getAttribute("height"));
+        }
+
+        if (typeof modal.showModal === "function") modal.showModal();
+        else modal.setAttribute("open", "");
+        document.documentElement.style.overflow = "hidden";
+    }
+
+    function close() {
+        if (typeof modal.close === "function" && modal.open) {
+            modal.close();
+            /* Событие `close` приходит асинхронно (и не всегда в headless) —
+               снимаем блокировку и возвращаем фокус сразу. Повторный вызов
+               в restore безвреден. */
+            restore();
+            return;
+        }
+        modal.removeAttribute("open");
+        restore();
+    }
+
+    /* Возврат фокуса на снимок и снятие блокировки прокрутки. */
+    function restore() {
+        document.documentElement.style.overflow = "";
+        var back = opener;
+        opener = null;
+        /* Диалог отдаёт фокус сам после закрытия — фокусируем на следующем кадре. */
+        if (back)
+            requestAnimationFrame(function () {
+                back.focus();
+            });
+    }
+
+    document.addEventListener("click", function (event) {
+        var link = event.target.closest("a[data-shot]");
+        if (link) {
+            event.preventDefault();
+            open(link);
+            return;
+        }
+        if (event.target.closest("[data-shot-modal-close]")) close();
+    });
+
+    /* Клик мимо картинки — по затемнению — закрывает окно. */
+    modal.addEventListener("click", function (event) {
+        if (event.target === modal) close();
+    });
+
+    modal.addEventListener("close", restore);
+})();

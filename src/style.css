@@ -1022,6 +1022,98 @@ kbd {
     font-size: 14.5px;
 }
 
+.shot a[data-shot] {
+    cursor: zoom-in;
+}
+
+/* Модальное окно снимка: только картинка, во весь доступный экран. */
+.shot-modal {
+    padding: 0;
+    color: var(--text);
+    background: none;
+    border: 0;
+    border-radius: var(--radius);
+    /* Закрытый <dialog> скрыт UA-стилем display:none — не переопределяем его
+       в базовом правиле, иначе невидимое окно висит над страницей и съедает клики. */
+}
+
+/* Центровка только у открытого окна: flex на весь экран. */
+.shot-modal[open] {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    animation: shot-modal-in 160ms ease-out;
+}
+
+.shot-modal::backdrop {
+    background: rgba(8, 10, 14, 0.78);
+    backdrop-filter: blur(3px);
+}
+
+@keyframes shot-modal-in {
+    from {
+        opacity: 0;
+        transform: scale(0.995);
+    }
+}
+
+.shot-modal__img {
+    display: block;
+    /* width/height сбрасывают интринсик миниатюры, скопированный скриптом,
+       иначе снимок остаётся мелким и не центрируется. */
+    width: auto;
+    height: auto;
+    max-width: 96vw;
+    max-height: 94vh;
+    margin: auto;
+    border-radius: var(--radius_sm);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.shot-modal__close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    color: var(--text_2);
+    background: rgba(8, 10, 14, 0.66);
+    border: 1px solid var(--border);
+    border-radius: var(--radius_sm);
+    cursor: pointer;
+}
+
+.shot-modal__close:hover {
+    color: var(--text);
+}
+
+.shot-modal__close svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    fill: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shot-modal[open] {
+        animation: none;
+    }
+}
+
 /* ── скачивание ──────────────────────────────────────────────────────────── */
 
 /* Карточка системы и строки-файлы в ней. Нажимается строка, а не вся карточка:
