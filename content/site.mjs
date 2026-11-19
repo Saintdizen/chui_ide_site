@@ -81,6 +81,7 @@ export const shots = [
  */
 export const guide = {
     order: [
+        "Запуск из исходников на Linux",
         "Начало работы",
         "Интерфейс",
         "Проект и файлы",
@@ -101,6 +102,7 @@ export const guide = {
         "Что дальше",
     ],
     slugs: {
+        "Запуск из исходников на Linux": "from-source",
         "Начало работы": "start",
         Интерфейс: "interface",
         "Проект и файлы": "project",
